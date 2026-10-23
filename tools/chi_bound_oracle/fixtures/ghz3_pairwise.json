@@ -1,0 +1,10 @@
+{
+  "n": 3,
+  "gates": [
+    {"op": "H", "wires": [0]},
+    {"op": "CNOT", "wires": [0, 1]},
+    {"op": "CNOT", "wires": [0, 2]}
+  ],
+  "expect_pairs_final": {"0|1": 2, "0|2": 2, "1|2": 1},
+  "note": "GHZ-prep sketch. Pairwise χ̂: (0,1) and (0,2) raised by CNOT; (1,2) stays 1 (never directly CNOTed). True GHZ has Schmidt rank 2 on every bipartition — this oracle under-reports (1|2) because it only tracks direct pairwise updates. Documented limitation."
+}

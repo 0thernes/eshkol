@@ -34,3 +34,10 @@ to remain product (e.g. control in `|0⟩`). That is an intentional over-approx.
 ## Out of scope here
 
 Typechecker integration, multipartite cuts, mixed states, Moonlab certificates.
+
+## n-wire (pairwise over-approx)
+
+For `n>2`, `multiwire.py` tracks χ̂ per unordered pair only. A CNOT updates
+that pair; MeasureZ zeros pairs involving the measured wire. **This is not a
+multipartite Schmidt certificate** — e.g. a GHZ-prep sketch raises (0|1) and
+(0|2) but leaves (1|2)=1 even though true GHZ has rank-2 on every cut.
