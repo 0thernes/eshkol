@@ -40,10 +40,23 @@ def test_refuse_alpha_nonzero_both_obs():
         assert r["reason"] == "pathwise-undefined"
         assert "dL" not in r
 
+def test_report_shape():
+    from report import build_report
+    rep = build_report(thetas=[0.0, 0.3], alphas=[0.0, 0.1], obs="Z")
+    assert rep["schema"] == "rfc-b-midcircuit-expect-report-v0"
+    assert rep["obs"] == "Z"
+    assert len(rep["rows"]) == 4
+    oks = [r for r in rep["rows"] if r["ok"]]
+    bads = [r for r in rep["rows"] if not r["ok"]]
+    assert len(oks) == 2 and all("dL" in r and "reason" not in r for r in oks)
+    assert len(bads) == 2 and all(r["reason"] == "pathwise-undefined" and "dL" not in r for r in bads)
+
+
 if __name__ == "__main__":
     test_known_values()
     test_fd_matches_closed_form_Z()
     test_fd_matches_closed_form_X()
     test_alpha0_ok_both_obs()
     test_refuse_alpha_nonzero_both_obs()
+    test_report_shape()
     print("RFC-B midcircuit_expect_oracle: PASS")
