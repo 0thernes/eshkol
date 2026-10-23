@@ -84,6 +84,26 @@ def test_ghz3_pairwise_fixture():
     assert "0|1=2" in format_pairs(final)
 
 
+def test_ghz3_walk_json_export():
+    """JSON walk: steps + final_cuts + honesty_flags match golden GHZ fixture."""
+    from pathlib import Path
+    import json
+    from multiwire import walk_to_json
+
+    gates_fix = Path(__file__).resolve().parent / "fixtures" / "ghz3_pairwise.json"
+    golden = Path(__file__).resolve().parent / "fixtures" / "ghz3_walk_export.json"
+    data = json.loads(gates_fix.read_text())
+    expect = json.loads(golden.read_text())
+    got = walk_to_json(data["n"], data["gates"])
+    assert got["schema"] == expect["schema"]
+    assert got["n"] == expect["n"]
+    assert got["honesty_flags"] == expect["honesty_flags"]
+    assert got["final_cuts"] == expect["final_cuts"]
+    assert len(got["steps"]) == 1 + len(data["gates"])  # init + gates
+    assert got["steps"][-1]["cuts"] == expect["final_cuts"]
+    assert "pairwise" in got["steps"][0]["honesty"]
+
+
 if __name__ == "__main__":
     test_cnot_raises_bound()
     test_measure_collapses_residual()
@@ -94,4 +114,5 @@ if __name__ == "__main__":
     test_chi_after_matches_circuit2_path()
     test_cli_golden_product_cnot_measure()
     test_ghz3_pairwise_fixture()
+    test_ghz3_walk_json_export()
     print("RFC-A chi_bound: PASS")

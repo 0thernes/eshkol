@@ -1,0 +1,10 @@
+{
+  "schema": "rfc-a-chi-walk-v0",
+  "n": 3,
+  "honesty_flags": [
+    "pairwise_cut_overapprox",
+    "not_multipartite_schmidt_certificate",
+    "undirected_pairs_only"
+  ],
+  "final_cuts": {"0|1": 2, "0|2": 2, "1|2": 1}
+}

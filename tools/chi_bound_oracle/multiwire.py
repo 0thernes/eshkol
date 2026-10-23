@@ -78,3 +78,37 @@ def run_multiwire(n: int, gates: Iterable[Gate]):
 def format_pairs(pairs: Dict[PairKey, int]) -> str:
     parts = [f"{i}|{j}={v}" for (i, j), v in sorted(pairs.items())]
     return " ".join(parts)
+
+
+def pairs_as_cuts(pairs: Dict[PairKey, int]) -> Dict[str, int]:
+    return {f"{i}|{j}": v for (i, j), v in sorted(pairs.items())}
+
+
+def walk_to_json(n: int, gates: Iterable[Gate]) -> dict:
+    """Export χ̂ walk as JSON: steps, final cuts, honesty flags."""
+    honesty_flags = [
+        "pairwise_cut_overapprox",
+        "not_multipartite_schmidt_certificate",
+        "undirected_pairs_only",
+    ]
+    steps = []
+    final_cuts: Dict[str, int] = {}
+    for step, op, wires, pairs, honesty in run_multiwire(n, gates):
+        cuts = pairs_as_cuts(pairs)
+        final_cuts = cuts
+        steps.append(
+            {
+                "step": step,
+                "op": op,
+                "wires": list(wires),
+                "cuts": cuts,
+                "honesty": honesty,
+            }
+        )
+    return {
+        "schema": "rfc-a-chi-walk-v0",
+        "n": n,
+        "honesty_flags": honesty_flags,
+        "steps": steps,
+        "final_cuts": final_cuts,
+    }
