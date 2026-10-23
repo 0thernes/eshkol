@@ -66,6 +66,24 @@ def test_cli_golden_product_cnot_measure():
     assert list(steps[3][3]) == data["expect_final"]
 
 
+def test_ghz3_pairwise_fixture():
+    """3-wire GHZ-prep sketch: pairwise over-approx; (1|2) stays 1 (documented)."""
+    from pathlib import Path
+    import json
+    from multiwire import run_multiwire, format_pairs
+
+    fixture = Path(__file__).resolve().parent / "fixtures" / "ghz3_pairwise.json"
+    data = json.loads(fixture.read_text())
+    steps = list(run_multiwire(data["n"], data["gates"]))
+    final = steps[-1][3]
+    got = {f"{i}|{j}": v for (i, j), v in final.items()}
+    assert got == data["expect_pairs_final"], (got, data["expect_pairs_final"])
+    # honesty string present on every step
+    assert "over-approx" in steps[-1][4]
+    # CLI-ish format non-empty
+    assert "0|1=2" in format_pairs(final)
+
+
 if __name__ == "__main__":
     test_cnot_raises_bound()
     test_measure_collapses_residual()
@@ -75,4 +93,5 @@ if __name__ == "__main__":
     test_chi_after_measure()
     test_chi_after_matches_circuit2_path()
     test_cli_golden_product_cnot_measure()
+    test_ghz3_pairwise_fixture()
     print("RFC-A chi_bound: PASS")
