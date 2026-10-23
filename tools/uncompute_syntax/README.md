@@ -3,3 +3,12 @@
 ```bash
 python3 test_check.py
 ```
+
+## CLI
+
+From `tools/`:
+
+```
+python -m uncompute_syntax --forward H,X --inverse X,H --released -o /tmp/cert.json
+python -m uncompute_syntax --verify /tmp/cert.json
+```
