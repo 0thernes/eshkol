@@ -12,3 +12,8 @@ From `tools/`:
 python -m uncompute_syntax --forward H,X --inverse X,H --released -o /tmp/cert.json
 python -m uncompute_syntax --verify /tmp/cert.json
 ```
+
+## Ancilla labels
+
+Gates may be objects `{"op":"H","ancilla":"q2"}`. Every label that appears
+must be listed in `released` (accept fixture) or the check rejects (leak).

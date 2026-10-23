@@ -1,0 +1,11 @@
+{
+  "forward": [
+    {"op": "H", "ancilla": "q2"}
+  ],
+  "inverse": [
+    {"op": "H", "ancilla": "q2"}
+  ],
+  "released": [],
+  "expect": "reject",
+  "note": "q2 used but not in released — leak"
+}
