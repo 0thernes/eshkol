@@ -52,6 +52,18 @@ def test_report_shape():
     assert len(bads) == 2 and all(r["reason"] == "pathwise-undefined" and "dL" not in r for r in bads)
 
 
+def test_fd_step_size_sensitivity_Z():
+    """α=0 ⟨Z⟩: FD at ε=1e-6 and ε=1e-5 agree within 1e-4."""
+    from expect_grad import fd_sensitivity_alpha0, dL_alpha0
+    for theta in (0.0, 0.3, 1.0, math.pi / 2, 2.0):
+        a, b, diff = fd_sensitivity_alpha0(theta, "Z", eps_a=1e-6, eps_b=1e-5)
+        assert diff < 1e-4, (theta, a, b, diff)
+        # both near analytic
+        analytic = dL_alpha0(theta, "Z")
+        assert abs(a - analytic) < 1e-5
+        assert abs(b - analytic) < 1e-4
+
+
 if __name__ == "__main__":
     test_known_values()
     test_fd_matches_closed_form_Z()
@@ -59,4 +71,5 @@ if __name__ == "__main__":
     test_alpha0_ok_both_obs()
     test_refuse_alpha_nonzero_both_obs()
     test_report_shape()
+    test_fd_step_size_sensitivity_Z()
     print("RFC-B midcircuit_expect_oracle: PASS")

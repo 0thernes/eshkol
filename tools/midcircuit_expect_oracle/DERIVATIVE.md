@@ -19,3 +19,17 @@ analytic `dL` within `1e-5` on the unit-test grid for both observables.
 
 `α ≠ 0` (classical feedforward into a later rotation) remains **refused** —
 see `REFUSE.md`.
+
+
+## Step-size sensitivity (α = 0)
+
+Central differences at two step sizes should agree when the analytic
+derivative is smooth:
+
+- `ε_a = 1e-6`, `ε_b = 1e-5`
+- Require `|FD(ε_a) − FD(ε_b)| < 1e-4` on the unit-test θ grid for ⟨Z⟩
+  (and typically ⟨X⟩).
+
+Disagreement beyond that tol usually means ε is too large (truncation) or
+too small (floating-point noise). This check does **not** apply when α ≠ 0
+(refused).

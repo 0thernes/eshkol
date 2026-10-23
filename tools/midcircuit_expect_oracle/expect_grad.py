@@ -77,3 +77,15 @@ def gradient(theta: float, alpha: float = 0.0, obs: Obs = "Z") -> GradResult:
         "L": L_alpha0(theta, obs),
         "dL": dL_alpha0(theta, obs),
     }
+
+
+def fd_sensitivity_alpha0(
+    theta: float,
+    obs: Obs = "Z",
+    eps_a: float = 1e-6,
+    eps_b: float = 1e-5,
+) -> tuple[float, float, float]:
+    """Return (fd_a, fd_b, abs_diff) for two step sizes. α=0 only."""
+    a = fd_dL_alpha0(theta, obs, eps=eps_a)
+    b = fd_dL_alpha0(theta, obs, eps=eps_b)
+    return a, b, abs(a - b)
