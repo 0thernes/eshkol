@@ -1,0 +1,12 @@
+{
+  "forward": [
+    {"op": "H", "ancilla": "q2"},
+    {"op": "X", "ancilla": "q2"}
+  ],
+  "inverse": [
+    {"op": "X", "ancilla": "q2"},
+    {"op": "H", "ancilla": "q2"}
+  ],
+  "released": ["q2"],
+  "expect": "accept"
+}
