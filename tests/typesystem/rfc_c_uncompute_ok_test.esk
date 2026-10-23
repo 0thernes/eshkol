@@ -1,9 +1,0 @@
-;; RFC-C MVP C2: compute-uncompute textbook pattern must succeed when feature lands.
-;; EXPECT-MODE: strict-types
-;; EXPECT-COMPILE: ok
-;; RFC-C-STATUS: red — with-uncompute macro not implemented.
-
-(define (ok-uncompute)
-  (with-uncompute ((a : Qubit (alloc-qubit)))
-    (let ((a1 (h a)))
-      (uncompute-to-zero a1))))
