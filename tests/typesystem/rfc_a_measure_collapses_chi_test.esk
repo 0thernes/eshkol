@@ -1,0 +1,16 @@
+;; RFC-A MVP A3: after measuring one Bell half, partner must type as χ≤1.
+;; EXPECT-MODE: strict-types
+;; EXPECT-COMPILE: ok
+;; RFC-A-STATUS: red — χ refinements not implemented; kept as design anchor.
+;;
+;; Acceptance when green: measure returns Bit and residual Qubit[χ≤1].
+
+(define (after-bell-measure)
+  (let* ((q0 : Qubit (alloc-qubit))
+         (q1 : Qubit (alloc-qubit))
+         (q0h : Qubit (h q0))
+         (pair (cnot q0h q1))
+         (b : Bit (measure (car pair)))
+         (q_res : Qubit (cdr pair)))
+    ;; Future: q_res : Qubit[χ≤1]
+    (cons b q_res)))
