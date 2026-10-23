@@ -1,75 +1,51 @@
-# RFC-C: Type-checker-proven uncomputation synthesis
+# RFC-C (MVP v0): Syntactic uncomputation check (ancilla liveness)
 
-**Status:** Draft — MVP scaffolding started  
-**Repos:** `tsotchke/eshkol` via `0thernes/eshkol`  
+**Status:** Proposal — discussion / design artifact  
+**Target repo:** `tsotchke/eshkol`  
 **Branch:** `feat/rfc-C-proven-uncompute`  
-**Related:** Frontier Idea C; moonshot F3
+**Effort estimate:** Days for the syntactic checker; weeks for a macro + LinearContext hook
 
-## 1. Problem
+## Intent
 
-Uncomputation (restore ancillas to \|0⟩) is either manual (Q# `Adjoint`) or academic sugar (Silq). Eshkol has the ingredients for **proof-obligated** uncomputation: linear use analysis + `TYPE_FLAG_PROOF` + macros — but no `with-uncompute` that the checker verifies.
+Define an achievable meaning of “proven uncompute” for MVP: **syntactic inverse of a straight-line gate list on a declared ancilla**, plus a liveness check that the ancilla is restored — **not** a quantum Hoare logic or Silq-complete automatic uncomputation.
 
-## 2. Prior art
+## Precise meaning of “proven” here
 
-- Silq automatic uncomputation; Q# adjoint functors; reversible computing (Bennett).
-- Proof-carrying / refinement approaches rare in QC langs.
+Given:
 
-## 3. Hooks
+- declared ancilla wire `a`
+- forward fragment `F = g₁;…;gₙ` acting on `a` (and possibly others)
+- user-supplied inverse fragment `F†` (or auto-derived as reverse gate order with dagger for the MVP gate set)
 
-| Hook | Path |
-|------|------|
-| Linear analysis | `lib/types/type_checker.cpp` `LinearContext` |
-| Proof flag | `TYPE_FLAG_PROOF` in `hott_types.h` |
-| VM parity bridge | `lib/types/linear_check_bridge.cpp` |
-| Macros | Scheme frontend |
-| Fixtures | `tests/typesystem/qubit_*` |
+The checker accepts iff:
 
-## 4. Design (MVP)
+1. Every gate in `F†` is the dagger of the corresponding gate in reversed `F` (syntactic), and
+2. After `F; F†`, the **ancilla use-count / ownership** model marks `a` as returned to the pool (MVP: explicit `release-zero a` sentinel required), and
+3. If `a` is still live with no `release-zero`, the check **rejects**.
 
-```scheme
-(with-uncompute ((a : Qubit (alloc)))
-  ;; body may use a
-  ;; checker requires a consumed by an inverse path returning |0⟩
-  ...)
-```
+This is a **syntactic + ownership** obligation. It does **not** prove the residual state is `|0⟩` under arbitrary entanglement with other wires; that is a stretch goal (needs a stronger semantics).
 
-MVP: **verify** user-supplied inverse (not full synthesis). Synthesis is stretch.
+## Non-goals
 
-Rules:
+- Full automatic synthesis of inverses for arbitrary programs.
+- Loops, measurement inside uncompute, or gradual-typing escapes.
+- Claiming equivalence to Silq.
 
-1. Ancilla live at end of block without uncompute → **compile fail**.
-2. Explicit `(uncompute-adjoint body-fragment)` must type as returning ancilla to zero state (ghost `Zero` refinement).
-3. Emit `TYPE_FLAG_PROOF` certificate erased at runtime.
+## Smallest mergeable artifact
 
-## 5. MVP acceptance tests
+1. This RFC.
+2. `tools/uncompute_syntax/` — Python checker + green tests (leak rejects; matched inverse accepts).
+3. Later: Scheme macro `with-uncompute` calling the same rules inside LinearContext.
 
-| ID | Expect |
-|----|--------|
-| C1 | Leaky ancilla `with-uncompute` **fails compile** |
-| C2 | Textbook ancilla-AND / compute-uncompute pattern **succeeds** |
-| C3 | Existing no-cloning fixtures unchanged |
-| C4 | Certificate artifact (sidecar or comment) present in compile log under flag |
+## Acceptance
 
-**Scaffold:** `tests/typesystem/rfc_c_uncompute_leak_fail_test.esk` (EXPECT-COMPILE: fail) + `rfc_c_uncompute_ok_test.esk` (red until macro exists).
+| ID | Criterion |
+|----|-----------|
+| C0 | Leak (forward without inverse/`release-zero`) → reject |
+| C1 | `H a; H a; release-zero a` → accept (H is self-inverse) |
+| C2 | Doc states limits (no semantic `|0⟩` proof under entanglement) |
 
-## 6. Stretch
+## Open questions
 
-- Synthesize inverse for straight-line unitary blocks.
-- Interaction with RFC-A χ.
-- Mid-circuit measure inside uncompute = reject.
-
-## 7. Risks
-
-- Incompleteness mistaken for unsoundness.
-- Macro hygiene / scope bugs creating false greens.
-
-## 8. 30 / 60 / 90
-
-- **30d:** Surface macro + C1 green (fail correctly).
-- **60d:** C2 green for one textbook pattern.
-- **90d:** Mini synthesis for Clifford+T fragment.
-
-## 9. Open questions
-
-1. Is `Zero` a refinement of `Qubit` or a separate type?
-2. Must BI-3 land before trusting uncompute across helpers?
+1. Gate set for auto-dagger in v0 (`H,X,Y,Z,S,CNOT,…`)?
+2. Must BI-3 land before trusting cross-helper uncompute?
