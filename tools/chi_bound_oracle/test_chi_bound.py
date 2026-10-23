@@ -50,6 +50,22 @@ def test_chi_after_matches_circuit2_path():
     s = chi_after("MeasureZ", s, 0)
     assert s == (0, 1)
 
+def test_cli_golden_product_cnot_measure():
+    """product → CNOT → χ̂=2 → MeasureZ → residual χ̂=1 (wire1)."""
+    from pathlib import Path
+    import json
+    from trace import run_trace
+
+    fixture = Path(__file__).resolve().parent / "fixtures" / "product_cnot_measure.json"
+    data = json.loads(fixture.read_text())
+    steps = list(run_trace(data["gates"], chi_in=(1, 1)))
+    assert steps[0][3] == (1, 1)  # init
+    assert steps[1][3] == (1, 1)  # H
+    assert steps[2][3] == (2, 2)  # CNOT
+    assert steps[3][3] == (0, 1)  # MeasureZ wire0
+    assert list(steps[3][3]) == data["expect_final"]
+
+
 if __name__ == "__main__":
     test_cnot_raises_bound()
     test_measure_collapses_residual()
@@ -58,4 +74,5 @@ if __name__ == "__main__":
     test_chi_after_cnot()
     test_chi_after_measure()
     test_chi_after_matches_circuit2_path()
+    test_cli_golden_product_cnot_measure()
     print("RFC-A chi_bound: PASS")
