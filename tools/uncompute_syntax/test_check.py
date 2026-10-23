@@ -1,16 +1,12 @@
-"""Round-trip syntactic uncompute tests (RFC-C MVP v0)."""
+"""Round-trip syntactic uncompute tests + certificate (RFC-C MVP v0)."""
 from check import check_uncompute
+from certificate import issue_certificate, verify_certificate
 
 def test_roundtrip_self_inverse_hh_ok():
-    # H; H is self-inverse; reverse dagger list is H; H
-    forward = ["H", "H"]
-    inverse = ["H", "H"]  # reverse order, each self-inverse
-    check_uncompute(forward, inverse, released=True)
+    check_uncompute(["H", "H"], ["H", "H"], released=True)
 
 def test_roundtrip_xz_ok():
-    forward = ["X", "Z"]
-    inverse = ["Z", "X"]
-    check_uncompute(forward, inverse, released=True)
+    check_uncompute(["X", "Z"], ["Z", "X"], released=True)
 
 def test_fail_missing_release_zero():
     try:
@@ -21,9 +17,23 @@ def test_fail_missing_release_zero():
 
 def test_fail_inverse_order():
     try:
-        # wrong order: should be Z then X for forward X;Z
         check_uncompute(["X", "Z"], ["X", "Z"], released=True)
         raise AssertionError("expected reject")
+    except ValueError:
+        pass
+
+def test_certificate_roundtrip():
+    cert = issue_certificate(["H", "X"], ["X", "H"], released=True)
+    assert cert["inverse_ok"] is True
+    assert cert["release_zero"] is True
+    assert len(cert["hash"]) == 64
+    verify_certificate(cert)
+    # tamper
+    bad = dict(cert)
+    bad["gates"] = ["H"]
+    try:
+        verify_certificate(bad)
+        raise AssertionError("expected hash/check failure")
     except ValueError:
         pass
 
@@ -32,4 +42,5 @@ if __name__ == "__main__":
     test_roundtrip_xz_ok()
     test_fail_missing_release_zero()
     test_fail_inverse_order()
+    test_certificate_roundtrip()
     print("RFC-C uncompute_syntax: PASS")
