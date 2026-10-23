@@ -37,10 +37,26 @@ def test_certificate_roundtrip():
     except ValueError:
         pass
 
+def test_cli_issue_and_verify(tmp_path=None):
+    """Smoke: issue cert via CLI helpers, write JSON, --verify path."""
+    import json, tempfile
+    from pathlib import Path
+    from certificate import issue_certificate, verify_certificate
+
+    cert = issue_certificate(["H", "X"], ["X", "H"], released=True)
+    with tempfile.TemporaryDirectory() as d:
+        path = Path(d) / "cert.json"
+        path.write_text(json.dumps(cert))
+        loaded = json.loads(path.read_text())
+        verify_certificate(loaded)
+        assert loaded["hash"] == cert["hash"]
+
+
 if __name__ == "__main__":
     test_roundtrip_self_inverse_hh_ok()
     test_roundtrip_xz_ok()
     test_fail_missing_release_zero()
     test_fail_inverse_order()
     test_certificate_roundtrip()
+    test_cli_issue_and_verify()
     print("RFC-C uncompute_syntax: PASS")

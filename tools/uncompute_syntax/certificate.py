@@ -2,7 +2,10 @@
 from __future__ import annotations
 import hashlib, json
 from typing import Any, Dict, List
-from check import check_uncompute
+try:
+    from .check import check_uncompute
+except ImportError:
+    from check import check_uncompute
 
 def issue_certificate(forward: List[str], inverse: List[str], released: bool) -> Dict[str, Any]:
     """Validate then return a certificate. Raises ValueError if check fails."""
