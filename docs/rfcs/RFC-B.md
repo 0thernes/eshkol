@@ -1,71 +1,49 @@
-# RFC-B: AD through mid-circuit measurement and classical feedforward
+# RFC-B (MVP v0): Gradients of expectations through mid-circuit measure (classical oracle)
 
-**Status:** Draft — MVP scaffolding started  
-**Repos:** `tsotchke/eshkol` via `0thernes/eshkol`  
+**Status:** Proposal — discussion / design artifact  
+**Target repo:** `tsotchke/eshkol`  
 **Branch:** `feat/rfc-B-ad-midcircuit`  
-**Related:** Frontier Idea B; moonshot F2
+**Effort estimate:** Days for the oracle; weeks for a language-level estimator behind a flag
 
-## 1. Problem
+## Intent
 
-`(derivative …)` in Eshkol is a compiler primitive (`lib/backend/autodiff_codegen.cpp`) but **stops making sense** at projective measurement: collapse is discontinuous / stochastic. PennyLane and JAX users hit the same wall. Mid-circuit measure + classical feedforward into later gates is exactly where adaptive algorithms live — and where gradients are least defined.
+Clarify **what is mathematically defined** when differentiating through mid-circuit measurement, and ship a **classical 1-qubit oracle** that matches finite differences. This does **not** claim Eshkol `(derivative …)` already works through `measure`.
 
-## 2. Prior art
+## Precise math (MVP)
 
-- Parameter-shift / adjoint methods for unitary circuits (Schuld et al.; PennyLane).
-- Score-function / REINFORCE estimators for discrete stochastic nodes.
-- Pathwise gradients invalid through nondifferentiable sample ops unless reparameterized.
-- No shipping **language** that types “this measure node admits estimator E” vs “refuse pathwise”.
+Circuit:
 
-## 3. Hooks
+1. Prepare `|ψ(θ)⟩ = R_y(θ)|0⟩` (real amplitudes: `cos(θ/2)|0⟩ + sin(θ/2)|1⟩`).
+2. Measure in Z basis → bit `b ~ Bern(p)` with `p = sin²(θ/2)`.
+3. If `b = 1`, apply `R_x(α)`; else identity. (Feedforward; for the MVP loss we use a simple post-measure observable.)
 
-| Hook | Path |
-|------|------|
-| AD engine | `lib/backend/autodiff_codegen.cpp`, `docs/design/AD_TAYLOR_TOWER.md` |
-| Measure | `moonlab/src/quantum/measurement.h` (`measurement_single_qubit(..., random_value)`) |
-| FFI | `lib/agent/quantum.esk` `measure` |
-| Seeded randomness | CQM `src/math/rng.ts` pattern; Moonlab takes explicit `random_value` — perfect for replay |
-| AD tests | `tests/ad/*` |
+**MVP loss (expectation only):** `L(θ) = E[⟨Z⟩ after feedforward]`.
 
-## 4. Design (MVP)
+For the special case `α = 0` (no feedforward rotation), `L(θ) = 1 - 2p = cos(θ)`, so `dL/dθ = -sin(θ)`.
 
-Define two AD modes through `measure`:
+**Defined:** derivatives of **expectations** `d/dθ E[f(b,θ)]` (score-function or closed form when available).  
+**Undefined / refused in MVP:** pathwise (sample-path) derivatives through projective collapse.
 
-1. **Expectation-AD (default):** differentiate `E[f(b, θ)]` where `b ~ Bern(p(θ))` via score-function or analytic Born-rule Jacobian when available.
-2. **Pathwise-AD:** **rejected** by the type/AD checker for projective measure unless an explicit `@reparam` form exists.
+## Non-goals
 
-Feedforward: classical `Bit` used as `if` into `Rx(θ)` must appear in the reverse-mode tape as a stochastic node with declared estimator.
+- No change to `autodiff_codegen.cpp` in this MVP.
+- No claim of parity with PennyLane or nested AD through multiple measures.
+- No entangled mid-circuit measure.
 
-## 5. MVP acceptance tests
+## Smallest mergeable artifact
 
-| ID | Expect |
-|----|--------|
-| B1 | Program: prepare Ry(θ)\|0⟩, measure, if 1 then Rx(α) else I, return ⟨Z⟩; `(derivative … θ)` defined |
-| B2 | Grad matches seeded FD over many shots within tol |
-| B3 | Requesting pathwise AD through measure → compile or runtime typed diagnostic |
-| B4 | Fixed `random_value` sequence → deterministic replay |
+1. This RFC.
+2. `tools/midcircuit_expect_oracle/` — pure Python: closed-form `L`, `dL/dθ`, and FD check (green).
+3. Later: document a refuse-path if `(derivative …)` meets `measure` (compiler PR, separate).
 
-**Scaffold:** `tests/ad/rfc_b_midcircuit_measure_gradient_test.esk` (red) + harness note.
+## Acceptance
 
-## 6. Stretch
+| ID | Criterion |
+|----|-----------|
+| B0 | `|dL_closed - dL_FD| < 1e-5` on a fixed θ grid (`α=0`) |
+| B1 | README states pathwise AD is out of scope |
 
-- Nested AD through two measure points.
-- Entangled mid-circuit measure.
-- Integration with RFC-A χ collapse.
+## Open questions
 
-## 7. Risks
-
-- Silent wrong gradients worse than none.
-- Variance explosion of score-function estimators.
-- Mixing dual-number forward mode with stochastic nodes incorrectly.
-
-## 8. 30 / 60 / 90
-
-- **30d:** Spec + FD oracle harness + B3 refuse path.
-- **60d:** B1/B2 green on 1-qubit toy.
-- **90d:** Nested case; docs in AD_TAYLOR_TOWER.md.
-
-## 9. Open questions
-
-1. Forward-mode duals vs reverse tape for score-function?
-2. Shot budget in the type of `Estimator`?
-3. Shared seeded RNG API across Eshkol/Moonlab?
+1. Which estimator to prototype first in-compiler (score-function vs analytic Born)?
+2. Seeded `random_value` API alignment with Moonlab?
