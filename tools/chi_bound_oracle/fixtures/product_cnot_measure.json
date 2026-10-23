@@ -1,0 +1,9 @@
+{
+  "gates": [
+    {"op": "H", "wire": 0},
+    {"op": "CNOT"},
+    {"op": "MeasureZ", "wire": 0}
+  ],
+  "expect_final": [0, 1],
+  "note": "product init χ̂=(1,1); after CNOT (2,2); MeasureZ wire0 → (0,1)"
+}
