@@ -1,15 +1,21 @@
-# α = 0 derivative formula
+# α = 0 derivative formulas
 
 State: `|ψ(θ)⟩ = R_y(θ)|0⟩ = cos(θ/2)|0⟩ + sin(θ/2)|1⟩`.
 
-Z-measure: `P(1) = sin²(θ/2)`, `P(0) = cos²(θ/2)`.
+No feedforward (`α = 0`). Post-prep Pauli expectations:
 
-With **no** feedforward (`α = 0`), post-measure ⟨Z⟩ equals the pre-measure
-Born expectation:
+| Observable | `L(θ)` | `dL/dθ` |
+|------------|--------|---------|
+| `Z` | `cos(θ)` | `−sin(θ)` |
+| `X` | `sin(θ)` | `cos(θ)` |
 
-`L(θ) = P(0)·(+1) + P(1)·(−1) = cos²(θ/2) − sin²(θ/2) = cos(θ)`.
+Derivation sketch:
 
-Hence `dL/dθ = −sin(θ)`.
+- `⟨Z⟩ = |α₀|² − |α₁|² = cos²(θ/2) − sin²(θ/2) = cos(θ)`
+- `⟨X⟩ = 2 Re(α₀* α₁) = 2 cos(θ/2)sin(θ/2) = sin(θ)`
 
 Finite-difference check: central difference with `ε = 1e-6` must match
-within `1e-5` on the unit-test grid.
+analytic `dL` within `1e-5` on the unit-test grid for both observables.
+
+`α ≠ 0` (classical feedforward into a later rotation) remains **refused** —
+see `REFUSE.md`.
