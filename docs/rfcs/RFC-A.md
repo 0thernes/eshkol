@@ -1,89 +1,55 @@
-# RFC-A: Entanglement-indexed dependent linear types
+# RFC-A (MVP v0): Symbolic Schmidt-rank upper bounds (design + oracle)
 
-**Status:** Draft — MVP scaffolding started  
-**Repos:** `tsotchke/eshkol` (work via `0thernes/eshkol` fork)  
+**Status:** Proposal — discussion / design artifact  
+**Target repo:** `tsotchke/eshkol` (reference branch on `0thernes/eshkol`)  
 **Branch:** `feat/rfc-A-entanglement-linear`  
-**Authors:** Alex Donahue / Grok Bot collaborator  
-**Related:** Page audit §25 Frontier Ideas A; moonshots F1
+**Effort estimate:** 1–2 weeks for a first checker hook; this MVP is docs + a standalone oracle (days)
 
-## 1. Problem
+## Intent (one sentence)
 
-Eshkol already enforces **no-cloning** via `Qubit` + `TYPE_FLAG_LINEAR` (`inc/eshkol/types/hott_types.h`). That rejects `(cons q q)` but says nothing about **entanglement topology**. After a Bell prep, both qubits are entangled; a type that still looks like an independent `Qubit` cannot express “this wire is correlated with that one” or “Schmidt rank across cut C is ≤ k”.
+Record a **sound over-approximation** of bipartite Schmidt-rank upper bounds (`χ`) for a tiny gate language, as a stepping stone toward optional type refinements — **not** a claim that Eshkol already tracks entanglement in the type checker.
 
-Resource-theory and entanglement theory treat Schmidt rank, entanglement of formation, and cut entanglement as first-class quantities. Languages (Q#, Silq, Quipper) do not track them in the type system of a shipping compiler.
+## Precise definition (MVP)
 
-## 2. Prior art
+For a pure bipartite state `|ψ⟩ ∈ ℂ² ⊗ ℂ²` (extend componentwise later), the **Schmidt rank** `χ(ψ)` is the rank of the reduced density matrix `ρ_A = Tr_B(|ψ⟩⟨ψ|)`.
 
-- Linear / affine quantum types: Selinger & Valiron, Green et al.; Silq (qfree/const); Q# qubit ownership.
-- Dependent / refinement types for resources: academic (Proto-Quipper variants, QWIRE) — not gradual + AD + AOT LLVM.
-- Moonlab already **computes** bipartite measures (`moonlab/src/quantum/entanglement.h`: Schmidt, concurrence, EoF).
-- Nobody ships **compile-time χ / cut bounds refined by CNOT and measure** in a gradual industrial language.
+We track only an **integer upper bound** `χ̂ ≥ χ(ψ)` under these rules (straight-line, pure, two wires):
 
-## 3. Hooks in this tree
+| Op | Rule |
+|----|------|
+| `alloc` / `|0⟩` | `χ̂ := 1` |
+| local unitary on one wire (`H`,`X`,`Y`,`Z`,`R_x/y/z`) | `χ̂` unchanged |
+| `CNOT` (control, target) when both wires start with `χ̂=1` and are the full system | `χ̂ := 2` (Bell-capable; sound over-approx even if state remains product for some inputs) |
+| computational-basis `measure` on one wire of a 2-wire system | residual wire: `χ̂ := 1` |
 
-| Hook | Path |
-|------|------|
-| Linear `Qubit` | `inc/eshkol/types/hott_types.h` (`TypeId Qubit`, `TYPE_FLAG_LINEAR`) |
-| Linear analysis | `lib/types/type_checker.cpp` (`LinearContext`), `lib/types/linear_check_bridge.cpp` |
-| Regression bed | `tests/typesystem/qubit_*.esk` (37 fixtures) |
-| Runtime measures | `moonlab/src/quantum/entanglement.h` / `.c` |
-| FFI surface today | `lib/agent/quantum.esk` (still i64 handles — out of MVP scope but future consumer) |
+These rules are **sound but coarse**: they never under-report entanglement after CNOT; they may over-report.
 
-## 4. Type / IR design (MVP)
+## Non-goals (explicit)
 
-Introduce a **refinement** (initially phantom / proof-erased):
+- No dependent/`Qubit[χ≤k]` syntax in the compiler in this MVP.
+- No multipartite cuts, mixed states, approximate entanglement, or runtime Moonlab certificates.
+- No claim that this “beats” Q#/Silq or closes BI-3.
+- No changes to `quantum.esk` FFI typing.
 
-```text
-Qubit                    ; existing
-Qubit[χ≤k]               ; upper bound on Schmidt rank vs a named cut (MVP: implicit bipartition tag)
-```
+## Smallest mergeable artifact
 
-Rules (MVP, pure bipartition, compile-time symbolic only):
+1. This RFC under `docs/rfcs/` (or an Issue body).
+2. A **standalone** Python oracle + tests (`tools/chi_bound_oracle/`) that encode the table above and pass on Bell + measure.
+3. Optional later PR: plumb `χ̂` as a side map in the type checker behind a flag — **separate** review.
 
-1. Fresh `alloc` → `Qubit[χ≤1]` (product / separable w.r.t. empty cut).
-2. `cnot : (Qubit[χ≤a], Qubit[χ≤b]) → (Qubit[χ≤a+b], Qubit[χ≤a+b])` (sound over-approx).
-3. Local Pauli/H/phase preserve χ.
-4. `measure : Qubit[χ≤k] → Bit` and residual partner collapses to `Qubit[χ≤1]` when k was raised only by that pair (MVP: tagged pair id).
-5. Reject ops annotated `@product-only` when χ>1.
+## Acceptance (MVP v0)
 
-`TYPE_FLAG_PROOF` carries χ; erased at runtime for MVP (no runtime tax). Later: optional runtime assert vs Moonlab Schmidt.
+| ID | Criterion |
+|----|-----------|
+| A0 | Oracle: two alloc → CNOT → `χ̂ == 2` |
+| A1 | Oracle: after measure one wire → residual `χ̂ == 1` |
+| A2 | Doc lists non-goals and soundness caveat |
 
-## 5. MVP acceptance tests
+## Risks
 
-| ID | Expect |
-|----|--------|
-| A1 | Bell-prep program types both outputs as χ≥2 (or χ≤2 with lower bound ghost) |
-| A2 | Applying `@product-only` local op to χ≥2 **fails compile** |
-| A3 | After measure on one Bell half, partner types as χ≤1 |
-| A4 | Existing `qubit_no_cloning_test.esk` still fails for clone |
-| A5 | Doc: χ is an **upper bound**; mixed/approximate states out of scope |
+Maintainers may prefer this stay an Issue until a flagged checker hook exists. That is fine.
 
-**Scaffold:** red tests under `tests/typesystem/rfc_a_*.esk` encoding A2/A3; stub `docs/rfcs/RFC-A.md` in-tree copy optional.
+## Open questions for maintainers
 
-## 6. Stretch goals
-
-- Multipartite cuts; automatic χ inference for Clifford fragments (ties RFC-V).
-- Runtime χ certificates via `entanglement.h`.
-- Wire into typed `agent.quantum` once linear Qubit FFI exists.
-
-## 7. Risks
-
-- Undecidability / gradual holes (BI-3 laundering still open).
-- False confidence if χ is only a coarse upper bound.
-- Annotation burden vs inference.
-
-## 8. 30 / 60 / 90 day plan
-
-- **30d:** Phantom syntax + A2 red→green on one Bell pattern; design doc frozen.
-- **60d:** Measure collapse rule A3; CNOT refinement; 10 fixtures.
-- **90d:** Optional runtime check vs Moonlab Schmidt on CI; ADR.
-
-## 9. Open questions
-
-1. Syntax: `Qubit[χ≤2]` vs `(Qubit χ 2)` vs ghost parameter?
-2. Cut naming: implicit pair-id vs explicit `Cut` type?
-3. Interaction with BI-3 — must BI-3 land first?
-
-## 10. Draft GitHub issue body
-
-See branch `feat/rfc-A-entanglement-linear` and `/workspace/cqm-audit/rfcs/RFC-A.md`.
+1. Prefer Issue-only vs a docs-only PR?
+2. Should `χ̂` live next to `LinearContext` or as a separate analysis pass?
