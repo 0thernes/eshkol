@@ -17,3 +17,9 @@ python -m uncompute_syntax --verify /tmp/cert.json
 
 Gates may be objects `{"op":"H","ancilla":"q2"}`. Every label that appears
 must be listed in `released` (accept fixture) or the check rejects (leak).
+
+## Certificate hash
+
+`hash` = SHA-256 of canonical JSON (`sort_keys=True`, compact separators).
+Key order in gate objects must not change the digest. `--verify` rejects
+tampered hashes.

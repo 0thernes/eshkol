@@ -75,6 +75,35 @@ def test_ancilla_reject_leak_fixture():
         assert "q2" in str(e)
 
 
+def test_hash_stable_across_key_order():
+    """Canonical JSON: different dict key insertion orders → same hash."""
+    from certificate import issue_certificate, canonical_dumps
+    import hashlib
+
+    # same logical gates, different key order in dict literals
+    f1 = [{"op": "H", "ancilla": "q2"}, {"ancilla": "q2", "op": "X"}]
+    f2 = [{"ancilla": "q2", "op": "H"}, {"op": "X", "ancilla": "q2"}]
+    inv1 = [{"op": "X", "ancilla": "q2"}, {"ancilla": "q2", "op": "H"}]
+    inv2 = [{"ancilla": "q2", "op": "X"}, {"op": "H", "ancilla": "q2"}]
+    c1 = issue_certificate(f1, inv1, released=["q2"])
+    c2 = issue_certificate(f2, inv2, released=["q2"])
+    assert c1["hash"] == c2["hash"]
+    # canonical_dumps itself ignores key order
+    assert canonical_dumps({"b": 1, "a": 2}) == canonical_dumps({"a": 2, "b": 1})
+
+
+def test_verify_fails_on_tampered_hash():
+    from certificate import issue_certificate, verify_certificate
+    cert = issue_certificate(["H"], ["H"], released=True)
+    bad = dict(cert)
+    bad["hash"] = "0" * 64
+    try:
+        verify_certificate(bad)
+        raise AssertionError("expected hash mismatch")
+    except ValueError as e:
+        assert "hash mismatch" in str(e)
+
+
 if __name__ == "__main__":
     test_roundtrip_self_inverse_hh_ok()
     test_roundtrip_xz_ok()
@@ -84,4 +113,6 @@ if __name__ == "__main__":
     test_cli_issue_and_verify()
     test_ancilla_accept_fixture()
     test_ancilla_reject_leak_fixture()
+    test_hash_stable_across_key_order()
+    test_verify_fails_on_tampered_hash()
     print("RFC-C uncompute_syntax: PASS")
