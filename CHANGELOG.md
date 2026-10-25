@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   preserving Windows AOT internal linkage. Rebuild stdlib JIT object caches
   with the same initializer contract instead of reusing objects whose local
   initializer cannot be found by the JIT.
+- **Native cross-entropy preserves reverse derivatives.** Record its tensor
+  tape node, retain logit edges and consume the actual upstream cotangent.
+  Constant probability and class-index labels are supported; differentiable
+  labels and the 13 numeric-only loss builtins refuse unsupported reverse
+  differentiation explicitly. Four native execution/lowering gates check
+  analytical derivatives, every MLP weight slope and a wrong-zero canary. (#871)
 
 ### Added
 
