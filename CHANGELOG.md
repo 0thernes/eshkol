@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   native AOT controls, bounded subprocesses, and retained JSON evidence. The
   v1.3.6 Windows x64 baseline exposes call/cc and guard/raise crashes and a
   parallel-map worker-registration failure; this adds reproductions, not fixes. (#869)
+- **Static quantum circuits export a validated OpenQASM 3 subset.**
+  Add opt-in `core.quantum.circuit` with 25 standard gate kinds, measurement,
+  reset, barriers, explicit zero-state initialization and logical resource
+  counts. A portable AOT contract gate and optional independent OpenQASM/Qiskit
+  oracle cover all gate kinds and 100 deterministic generated circuits.
+  This module exports descriptions; it does not simulate or submit hardware jobs.
 
 ## [1.3.6-evolve] - 2026-10-15
 
