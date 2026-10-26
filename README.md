@@ -1,3 +1,9 @@
+> **0thernes development fork.** This repository builds on
+> [tsotchke/eshkol](https://github.com/tsotchke/eshkol) and includes the native
+> runtime, differentiation, quantum interoperability and documentation changes
+> described in [FORK.md](FORK.md). Release records and download links below
+> describe the upstream baseline; they do not qualify a release of this fork.
+
 <div align="center">
 
 <br>

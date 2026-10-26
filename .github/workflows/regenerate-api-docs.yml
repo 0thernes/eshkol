@@ -32,8 +32,8 @@ jobs:
             echo "docs/api is unchanged."
             exit 0
           fi
-          git config user.name "tsotchke"
-          git config user.email "tsotchkele@gmail.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/api
           git commit -m "docs: regenerate API reference [skip ci]"
           git push

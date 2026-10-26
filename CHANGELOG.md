@@ -49,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
+- Establish the 0thernes development fork with an explicit upstream baseline,
+  fork-safe Pages publishing and automated documentation attribution. Refresh
+  the generated API reference for the integrated public headers.
 - Correct the Linux download instructions, native REPL command, RK4 accuracy
   description, and exact-rational power reference. Qualify AD overhead and
   arena-memory timing claims on the website. (#870)

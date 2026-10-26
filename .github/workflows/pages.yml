@@ -167,11 +167,15 @@ jobs:
       # well-known name `github-pages` which `deploy-pages` (in the next
       # job) picks up automatically.
       - uses: actions/configure-pages@v6
+        if: github.repository == 'tsotchke/eshkol'
       - uses: actions/upload-pages-artifact@v5
+        if: github.repository == 'tsotchke/eshkol'
         with:
           path: site/static
 
   deploy:
+    # Forks retain artifact validation but must configure their own website.
+    if: github.repository == 'tsotchke/eshkol'
     name: deploy-site
     needs: build
     runs-on: ubuntu-22.04
