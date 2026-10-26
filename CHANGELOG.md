@@ -47,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   oracle cover all gate kinds and 100 deterministic generated circuits.
   This module exports descriptions; it does not simulate or submit hardware jobs. (#872)
 
+### Documentation
+
+- Correct the Linux download instructions, native REPL command, RK4 accuracy
+  description, and exact-rational power reference. Qualify AD overhead and
+  arena-memory timing claims on the website. (#870)
+
 ## [1.3.6-evolve] - 2026-10-15
 
 PREPARED FOR PUBLICATION. Intended release date: Thursday, October 15, 2026.
